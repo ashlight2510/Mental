@@ -39,6 +39,28 @@
         opacity: 1;
         transform: translateY(0);
       }
+      .lang-switch {
+        display: inline-flex;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(15, 23, 42, 0.7);
+        padding: 3px;
+        gap: 4px;
+        font-size: 11px;
+      }
+      .lang-switch button {
+        border-radius: 999px;
+        padding: 4px 8px;
+        color: #cbd5f5;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        line-height: 1;
+      }
+      .lang-switch button.active {
+        background: rgba(248, 250, 252, 0.15);
+        color: #f8fafc;
+      }
     </style>
     <meta property="og:image:alt" content="Daily Mental Stamina Test" />
     <link
@@ -94,7 +116,13 @@
       >
         <div class="space-y-3 mb-4">
           <div class="flex items-center justify-between text-sm text-slate-300">
-            <span id="progressLabel">Q1 / 10</span>
+            <div class="flex items-center gap-3">
+              <span id="progressLabel">Q1 / 10</span>
+              <div class="lang-switch" role="tablist" aria-label="Language switcher">
+                <button type="button" data-lang="ko" class="active">한국어</button>
+                <button type="button" data-lang="en">EN</button>
+              </div>
+            </div>
             <a
               href="https://funnyfunny.cloud"
               target="_blank"
@@ -116,10 +144,10 @@
           </div>
         </div>
 
-        <h1 class="text-2xl sm:text-3xl font-semibold mb-2">
+        <h1 class="text-2xl sm:text-3xl font-semibold mb-2" data-i18n="title">
           🧠 하루 정신 체력 지수 테스트
         </h1>
-        <p class="text-base sm:text-lg text-slate-200 mb-6">
+        <p class="text-base sm:text-lg text-slate-200 mb-6" data-i18n="subtitle">
           오늘 당신의 뇌 에너지와 집중력 상태를 진단합니다.
         </p>
 
@@ -136,20 +164,26 @@
             id="resultBanner"
             class="rounded-xl p-4 bg-gradient-to-r from-slate-700 to-slate-900 border border-white/10 shadow-lg"
           >
-            <p class="text-sm text-white/80 mb-1">오늘의 상태</p>
+            <p class="text-sm text-white/80 mb-1" data-i18n="resultStatus">
+              오늘의 상태
+            </p>
             <p id="resultTitle" class="text-2xl font-bold"></p>
             <p id="resultPercent" class="text-sm text-white/80"></p>
           </div>
           <p id="resultDesc" class="text-base text-slate-200"></p>
           <div>
-            <p class="text-sm text-slate-300 mb-2">체감 포인트</p>
+            <p class="text-sm text-slate-300 mb-2" data-i18n="pointsLabel">
+              체감 포인트
+            </p>
             <ul
               id="resultDetail"
               class="list-disc list-inside space-y-1 text-slate-200 text-sm"
             ></ul>
           </div>
           <div>
-            <p class="text-sm text-slate-300 mb-2">추천 루틴</p>
+            <p class="text-sm text-slate-300 mb-2" data-i18n="routineLabel">
+              추천 루틴
+            </p>
             <div id="routine" class="flex flex-col gap-2"></div>
           </div>
           <p
@@ -159,6 +193,7 @@
           <button
             id="restart"
             class="mt-4 inline-flex items-center justify-center px-4 py-2 rounded-full bg-white text-slate-900 font-semibold hover:shadow-lg transition focus:outline-none focus:ring-2 focus:ring-white/40"
+            data-i18n="restart"
           >
             다시 하기
           </button>
@@ -167,162 +202,433 @@
     </main>
 
     <script>
-      const questions = [
-        {
-          text: "아침에 눈 떴을 때 느낌은?",
-          options: [
-            { label: "알람 전에 상쾌하게 깸", value: 10 },
-            { label: "알람과 함께 바로 일어남", value: 8 },
-            { label: "몇 번의 스누즈 후 겨우 기상", value: 5 },
-            { label: "이불과 한 몸이었음", value: 2 },
+      const translations = {
+        ko: {
+          metaTitle: "하루 정신 체력 지수 테스트",
+          metaDescription: "오늘 당신의 뇌 에너지와 집중력 상태를 진단합니다.",
+          metaOgTitle: "하루 정신 체력 지수 테스트",
+          metaOgDescription: "오늘 당신의 멘탈은 몇 %인가?",
+          title: "🧠 하루 정신 체력 지수 테스트",
+          subtitle: "오늘 당신의 뇌 에너지와 집중력 상태를 진단합니다.",
+          resultStatus: "오늘의 상태",
+          pointsLabel: "체감 포인트",
+          routineLabel: "추천 루틴",
+          restart: "다시 하기",
+          progressLabel: "Q{current} / {total}",
+          resultCta: "다른 재미있는 테스트도 해보세요! 👉",
+          resultPercent: "오늘의 컨디션: {percent}%",
+          resultTitleWithScore: "{title} ({score}점)",
+          questions: [
+            {
+              text: "아침에 눈 떴을 때 느낌은?",
+              options: [
+                { label: "알람 전에 상쾌하게 깸", value: 10 },
+                { label: "알람과 함께 바로 일어남", value: 8 },
+                { label: "몇 번의 스누즈 후 겨우 기상", value: 5 },
+                { label: "이불과 한 몸이었음", value: 2 },
+              ],
+            },
+            {
+              text: "오늘 집중이 풀리기까지 걸린 시간은?",
+              options: [
+                { label: "1시간 이상 쭉 몰입", value: 10 },
+                { label: "30분 정도", value: 8 },
+                { label: "15분 정도", value: 5 },
+                { label: "5분도 버티기 힘듦", value: 2 },
+              ],
+            },
+            {
+              text: "현재 할 일 목록을 보면?",
+              options: [
+                { label: "우선순위 명확, 가볍게 할 수 있음", value: 10 },
+                { label: "조금 많지만 관리 가능", value: 8 },
+                { label: "어디서 시작할지 고민 중", value: 5 },
+                { label: "생각만 해도 숨 막힘", value: 2 },
+              ],
+            },
+            {
+              text: "알림과 메시지에 대한 느낌은?",
+              options: [
+                { label: "필요 알림만, 나머진 잠금", value: 10 },
+                { label: "조금 시끄럽지만 견딜 만함", value: 8 },
+                { label: "끊임없이 울려서 거슬림", value: 5 },
+                { label: "이미 포기, 손도 못 댐", value: 2 },
+              ],
+            },
+            {
+              text: "최근 수면 퀄리티는?",
+              options: [
+                { label: "7~8시간, 숙면 느낌", value: 10 },
+                { label: "6시간 정도, 괜찮음", value: 8 },
+                { label: "4~5시간, 뒤척임", value: 5 },
+                { label: "잠든 건지 모를 정도", value: 2 },
+              ],
+            },
+            {
+              text: "카페인 상태는?",
+              options: [
+                { label: "필요 없거나 적당히 딱 맞음", value: 10 },
+                { label: "한 잔으로 충분", value: 8 },
+                { label: "두 잔째 찾는 중", value: 5 },
+                { label: "이미 과투입, 손 떨림", value: 2 },
+              ],
+            },
+            {
+              text: "현재 감정 온도는?",
+              options: [
+                { label: "차분하고 안정적", value: 10 },
+                { label: "조금 들뜸/살짝 불안", value: 8 },
+                { label: "쉽게 예민해짐", value: 5 },
+                { label: "폭발 직전", value: 2 },
+              ],
+            },
+            {
+              text: "오늘 몸을 얼마나 움직였나요?",
+              options: [
+                { label: "10분 이상 스트레칭/산책", value: 10 },
+                { label: "짧게라도 몸 풀었음", value: 8 },
+                { label: "자리에서 일어났다가 말았음", value: 5 },
+                { label: "의자와 친구가 됨", value: 2 },
+              ],
+            },
+            {
+              text: "멀티태스킹 정도는?",
+              options: [
+                { label: "하나씩 집중, 흐름 유지", value: 10 },
+                { label: "두 개 정도 병행 가능", value: 8 },
+                { label: "여러 개 건드리다 미완료", value: 5 },
+                { label: "머릿속 탭 과부하", value: 2 },
+              ],
+            },
+            {
+              text: "지금 머릿속 잡음 수준은?",
+              options: [
+                { label: "맑음, 목표만 떠오름", value: 10 },
+                { label: "약간의 노이즈", value: 8 },
+                { label: "생각이 자주 튐", value: 5 },
+                { label: "완전 잡음 라디오", value: 2 },
+              ],
+            },
+          ],
+          results: [
+            {
+              range: [20, 45],
+              title: "🪫 배터리 10% 모드",
+              desc: "오늘의 당신은 ‘생각은 있는데 몸이 안 따라주는 날’입니다. 의지가 아니라 뇌 에너지가 부족한 상태예요.",
+              routine: [
+                "5분 정리",
+                "물 200ml",
+                "오늘 할 일 1개만",
+                "카페인 추가 금지",
+              ],
+              detail: [
+                "작은 일도 크게 느껴지고 결정 피로도가 쉽게 옴",
+                "주변 자극에 예민하고 집중이 자주 끊김",
+                "의지가 아니라 에너지 부족 상태",
+              ],
+              note: "당신은 문제가 있는 게 아니라, 에너지가 필요한 겁니다. 오늘은 ‘최소한의 하루’를 허락해 주세요.",
+            },
+            {
+              range: [46, 65],
+              title: "🌫 안개 모드",
+              desc: "생각은 많지만 행동이 잘 붙지 않는 날입니다. 머릿속 탭이 너무 많아 흐름이 자주 끊어집니다.",
+              routine: [
+                "할 일 5분 단위로 쪼개기",
+                "타이머 3분 스타트",
+                "알림 15분 OFF",
+              ],
+              detail: [
+                "해야 할 걸 알지만 시작이 어렵고 속도가 느림",
+                "머릿속 잔 잡음이 섞여 집중이 흐트러짐",
+                "초점이 안 잡혀도 괜찮음, 속도를 줄이는 게 해결책",
+              ],
+              note: "초점이 안 잡히는 날은 속도를 줄이는 게 해결법입니다.",
+            },
+            {
+              range: [66, 82],
+              title: "🔥 오버히트 모드",
+              desc: "생각과 일정이 과열된 상태입니다. 지금도 잘하고 있지만 너무 많은 걸 동시에 처리하려고 하고 있어요.",
+              routine: ["10분 산책", "오늘 일정 1개 제거", "알림 30분 OFF"],
+              detail: [
+                "생각 속도는 빠르고 할 일도 많음",
+                "책임감이 강해도 뇌는 쉬고 싶어 함",
+                "몰입은 무기지만 과열은 회복이 필요",
+              ],
+              note: "몰입은 무기지만, 과열은 망가짐의 시작입니다.",
+            },
+            {
+              range: [83, 100],
+              title: "🧊 냉정 모드",
+              desc: "오늘의 당신은 ‘조용히 강한 날’입니다. 집중력, 감정 회복력, 통제력 모두 안정적입니다.",
+              routine: [
+                "중요한 일 먼저 처리",
+                "25분 집중/5분 회복",
+                "관계 챙기기 루틴",
+              ],
+              detail: [
+                "감정 기복이 적고 우선순위 판단이 명확",
+                "집중 전환 속도가 빠르고 자기 통제력이 높음",
+                "이런 날은 희소하니 중요한 일을 먼저 실행",
+              ],
+              note: "이런 날 많이 오지 않습니다. 중요한 걸 하세요.",
+            },
           ],
         },
-        {
-          text: "오늘 집중이 풀리기까지 걸린 시간은?",
-          options: [
-            { label: "1시간 이상 쭉 몰입", value: 10 },
-            { label: "30분 정도", value: 8 },
-            { label: "15분 정도", value: 5 },
-            { label: "5분도 버티기 힘듦", value: 2 },
+        en: {
+          metaTitle: "Daily Mental Stamina Test",
+          metaDescription: "Check your brain energy and focus level today.",
+          metaOgTitle: "Daily Mental Stamina Test",
+          metaOgDescription: "What's your mental stamina today?",
+          title: "🧠 Daily Mental Stamina Test",
+          subtitle: "Check your brain energy and focus level today.",
+          resultStatus: "Today's state",
+          pointsLabel: "Key signals",
+          routineLabel: "Suggested routine",
+          restart: "Restart",
+          progressLabel: "Q{current} / {total}",
+          resultCta: "Try other fun tests too! 👉",
+          resultPercent: "Today's condition: {percent}%",
+          resultTitleWithScore: "{title} ({score} pts)",
+          questions: [
+            {
+              text: "How did you feel when you woke up?",
+              options: [
+                { label: "Woke up refreshed before the alarm", value: 10 },
+                { label: "Got up right with the alarm", value: 8 },
+                { label: "Snoozed several times", value: 5 },
+                { label: "Fused with the blanket", value: 2 },
+              ],
+            },
+            {
+              text: "How long did you stay focused today?",
+              options: [
+                { label: "Over an hour, deep focus", value: 10 },
+                { label: "Around 30 minutes", value: 8 },
+                { label: "About 15 minutes", value: 5 },
+                { label: "Couldn't last 5 minutes", value: 2 },
+              ],
+            },
+            {
+              text: "Looking at your to-do list",
+              options: [
+                { label: "Clear priorities, feels light", value: 10 },
+                { label: "A bit much but manageable", value: 8 },
+                { label: "Not sure where to start", value: 5 },
+                { label: "Just thinking about it is heavy", value: 2 },
+              ],
+            },
+            {
+              text: "Notifications and messages feel",
+              options: [
+                { label: "Only essentials on, the rest muted", value: 10 },
+                { label: "A bit noisy but tolerable", value: 8 },
+                { label: "Nonstop and distracting", value: 5 },
+                { label: "Already given up", value: 2 },
+              ],
+            },
+            {
+              text: "Recent sleep quality",
+              options: [
+                { label: "7-8 hours, deep sleep", value: 10 },
+                { label: "About 6 hours, okay", value: 8 },
+                { label: "4-5 hours, restless", value: 5 },
+                { label: "Not sure I even slept", value: 2 },
+              ],
+            },
+            {
+              text: "Caffeine status",
+              options: [
+                { label: "Not needed or just right", value: 10 },
+                { label: "One cup is enough", value: 8 },
+                { label: "Looking for the second cup", value: 5 },
+                { label: "Overloaded, hands shaking", value: 2 },
+              ],
+            },
+            {
+              text: "Current emotional temperature",
+              options: [
+                { label: "Calm and stable", value: 10 },
+                { label: "Slightly excited/anxious", value: 8 },
+                { label: "Easily irritable", value: 5 },
+                { label: "About to explode", value: 2 },
+              ],
+            },
+            {
+              text: "How much did you move today?",
+              options: [
+                { label: "10+ minutes stretch/walk", value: 10 },
+                { label: "Moved a little", value: 8 },
+                { label: "Stood up once or twice", value: 5 },
+                { label: "Became one with the chair", value: 2 },
+              ],
+            },
+            {
+              text: "Your multitasking level",
+              options: [
+                { label: "Focus on one, keep flow", value: 10 },
+                { label: "Handle about two tasks", value: 8 },
+                { label: "Touched many, finished none", value: 5 },
+                { label: "Too many tabs in my head", value: 2 },
+              ],
+            },
+            {
+              text: "Noise level in your head",
+              options: [
+                { label: "Clear, only goals", value: 10 },
+                { label: "A bit of noise", value: 8 },
+                { label: "Thoughts jump around", value: 5 },
+                { label: "Full static radio", value: 2 },
+              ],
+            },
+          ],
+          results: [
+            {
+              range: [20, 45],
+              title: "🪫 Battery 10% Mode",
+              desc: "Today is a day where your mind wants to move but your energy can't keep up.",
+              routine: [
+                "5-minute tidy",
+                "200ml water",
+                "Only 1 task today",
+                "No extra caffeine",
+              ],
+              detail: [
+                "Even small tasks feel heavy and decision fatigue hits fast",
+                "Sensitive to stimuli and focus breaks often",
+                "Not a willpower issue - it's low energy",
+              ],
+              note: "You're not broken; you need energy. Allow a \"minimum day\" today.",
+            },
+            {
+              range: [46, 65],
+              title: "🌫 Fog Mode",
+              desc: "Lots of thoughts, but action doesn't stick. Too many tabs in your head.",
+              routine: [
+                "Split tasks into 5-minute chunks",
+                "Start a 3-minute timer",
+                "Mute notifications for 15 minutes",
+              ],
+              detail: [
+                "You know what to do, but starting feels hard",
+                "Background noise makes focus wobble",
+                "Lowering speed is the fix",
+              ],
+              note: "On foggy days, slowing down is the solution.",
+            },
+            {
+              range: [66, 82],
+              title: "🔥 Overheat Mode",
+              desc: "Your thoughts and schedule are overheating. You're doing well, but too much at once.",
+              routine: ["10-minute walk", "Remove 1 task today", "Mute alerts 30 min"],
+              detail: [
+                "Fast mind, too many tasks",
+                "Strong responsibility, but the brain wants rest",
+                "Focus is a weapon, overheating needs recovery",
+              ],
+              note: "Focus is a weapon, but overheating is the start of burnout.",
+            },
+            {
+              range: [83, 100],
+              title: "🧊 Cool Mode",
+              desc: "A quietly strong day. Focus, emotional recovery, and control are stable.",
+              routine: [
+                "Do the most important task first",
+                "25 min focus / 5 min recovery",
+                "Check in with relationships",
+              ],
+              detail: [
+                "Low emotional swings and clear priorities",
+                "Quick focus switching, strong self-control",
+                "These days are rare, use them well",
+              ],
+              note: "Days like this are rare. Do the important thing.",
+            },
           ],
         },
-        {
-          text: "현재 할 일 목록을 보면?",
-          options: [
-            { label: "우선순위 명확, 가볍게 할 수 있음", value: 10 },
-            { label: "조금 많지만 관리 가능", value: 8 },
-            { label: "어디서 시작할지 고민 중", value: 5 },
-            { label: "생각만 해도 숨 막힘", value: 2 },
-          ],
-        },
-        {
-          text: "알림과 메시지에 대한 느낌은?",
-          options: [
-            { label: "필요 알림만, 나머진 잠금", value: 10 },
-            { label: "조금 시끄럽지만 견딜 만함", value: 8 },
-            { label: "끊임없이 울려서 거슬림", value: 5 },
-            { label: "이미 포기, 손도 못 댐", value: 2 },
-          ],
-        },
-        {
-          text: "최근 수면 퀄리티는?",
-          options: [
-            { label: "7~8시간, 숙면 느낌", value: 10 },
-            { label: "6시간 정도, 괜찮음", value: 8 },
-            { label: "4~5시간, 뒤척임", value: 5 },
-            { label: "잠든 건지 모를 정도", value: 2 },
-          ],
-        },
-        {
-          text: "카페인 상태는?",
-          options: [
-            { label: "필요 없거나 적당히 딱 맞음", value: 10 },
-            { label: "한 잔으로 충분", value: 8 },
-            { label: "두 잔째 찾는 중", value: 5 },
-            { label: "이미 과투입, 손 떨림", value: 2 },
-          ],
-        },
-        {
-          text: "현재 감정 온도는?",
-          options: [
-            { label: "차분하고 안정적", value: 10 },
-            { label: "조금 들뜸/살짝 불안", value: 8 },
-            { label: "쉽게 예민해짐", value: 5 },
-            { label: "폭발 직전", value: 2 },
-          ],
-        },
-        {
-          text: "오늘 몸을 얼마나 움직였나요?",
-          options: [
-            { label: "10분 이상 스트레칭/산책", value: 10 },
-            { label: "짧게라도 몸 풀었음", value: 8 },
-            { label: "자리에서 일어났다가 말았음", value: 5 },
-            { label: "의자와 친구가 됨", value: 2 },
-          ],
-        },
-        {
-          text: "멀티태스킹 정도는?",
-          options: [
-            { label: "하나씩 집중, 흐름 유지", value: 10 },
-            { label: "두 개 정도 병행 가능", value: 8 },
-            { label: "여러 개 건드리다 미완료", value: 5 },
-            { label: "머릿속 탭 과부하", value: 2 },
-          ],
-        },
-        {
-          text: "지금 머릿속 잡음 수준은?",
-          options: [
-            { label: "맑음, 목표만 떠오름", value: 10 },
-            { label: "약간의 노이즈", value: 8 },
-            { label: "생각이 자주 튐", value: 5 },
-            { label: "완전 잡음 라디오", value: 2 },
-          ],
-        },
-      ];
+      };
 
-      const resultConfig = [
-        {
-          range: [20, 45],
-          title: "🪫 배터리 10% 모드",
-          desc: "오늘의 당신은 ‘생각은 있는데 몸이 안 따라주는 날’입니다. 의지가 아니라 뇌 에너지가 부족한 상태예요.",
-          routine: [
-            "5분 정리",
-            "물 200ml",
-            "오늘 할 일 1개만",
-            "카페인 추가 금지",
-          ],
-          detail: [
-            "작은 일도 크게 느껴지고 결정 피로도가 쉽게 옴",
-            "주변 자극에 예민하고 집중이 자주 끊김",
-            "의지가 아니라 에너지 부족 상태",
-          ],
-          note: "당신은 문제가 있는 게 아니라, 에너지가 필요한 겁니다. 오늘은 ‘최소한의 하루’를 허락해 주세요.",
-        },
-        {
-          range: [46, 65],
-          title: "🌫 안개 모드",
-          desc: "생각은 많지만 행동이 잘 붙지 않는 날입니다. 머릿속 탭이 너무 많아 흐름이 자주 끊어집니다.",
-          routine: [
-            "할 일 5분 단위로 쪼개기",
-            "타이머 3분 스타트",
-            "알림 15분 OFF",
-          ],
-          detail: [
-            "해야 할 걸 알지만 시작이 어렵고 속도가 느림",
-            "머릿속 잔 잡음이 섞여 집중이 흐트러짐",
-            "초점이 안 잡혀도 괜찮음, 속도를 줄이는 게 해결책",
-          ],
-          note: "초점이 안 잡히는 날은 속도를 줄이는 게 해결법입니다.",
-        },
-        {
-          range: [66, 82],
-          title: "🔥 오버히트 모드",
-          desc: "생각과 일정이 과열된 상태입니다. 지금도 잘하고 있지만 너무 많은 걸 동시에 처리하려고 하고 있어요.",
-          routine: ["10분 산책", "오늘 일정 1개 제거", "알림 30분 OFF"],
-          detail: [
-            "생각 속도는 빠르고 할 일도 많음",
-            "책임감이 강해도 뇌는 쉬고 싶어 함",
-            "몰입은 무기지만 과열은 회복이 필요",
-          ],
-          note: "몰입은 무기지만, 과열은 망가짐의 시작입니다.",
-        },
-        {
-          range: [83, 100],
-          title: "🧊 냉정 모드",
-          desc: "오늘의 당신은 ‘조용히 강한 날’입니다. 집중력, 감정 회복력, 통제력 모두 안정적입니다.",
-          routine: [
-            "중요한 일 먼저 처리",
-            "25분 집중/5분 회복",
-            "관계 챙기기 루틴",
-          ],
-          detail: [
-            "감정 기복이 적고 우선순위 판단이 명확",
-            "집중 전환 속도가 빠르고 자기 통제력이 높음",
-            "이런 날은 희소하니 중요한 일을 먼저 실행",
-          ],
-          note: "이런 날 많이 오지 않습니다. 중요한 걸 하세요.",
-        },
-      ];
+      const defaultLang = "en";
+      const supportedLangs = ["ko", "en"];
+      let currentLang = defaultLang;
+
+      function t(key, vars = {}) {
+        const langTable = translations[currentLang] || translations.ko;
+        const template = langTable[key] ?? translations.ko[key] ?? key;
+        return String(template).replace(/\{(\w+)\}/g, (_, token) =>
+          vars[token] !== undefined ? vars[token] : `{${token}}`
+        );
+      }
+
+      function getQuestions() {
+        return (translations[currentLang] || translations.ko).questions;
+      }
+
+      function getResults() {
+        return (translations[currentLang] || translations.ko).results;
+      }
+
+      function applyTranslations() {
+        document.title = t("metaTitle");
+        const desc = document.querySelector('meta[name="description"]');
+        if (desc) desc.setAttribute("content", t("metaDescription"));
+        const ogTitle = document.querySelector('meta[property="og:title"]');
+        if (ogTitle) ogTitle.setAttribute("content", t("metaOgTitle"));
+        const ogDesc = document.querySelector('meta[property="og:description"]');
+        if (ogDesc) ogDesc.setAttribute("content", t("metaOgDescription"));
+
+        document.querySelectorAll("[data-i18n]").forEach((el) => {
+          el.textContent = t(el.dataset.i18n);
+        });
+      }
+
+      function setLang(lang, options = {}) {
+        const nextLang = translations[lang] ? lang : defaultLang;
+        currentLang = nextLang;
+        document.documentElement.lang = nextLang;
+        localStorage.setItem("preferredLang", nextLang);
+        document.querySelectorAll(".lang-switch button").forEach((button) => {
+          button.classList.toggle("active", button.dataset.lang === nextLang);
+        });
+        applyTranslations();
+        if (resultBlock.classList.contains("hidden")) {
+          renderQuestion();
+        } else {
+          showResult();
+        }
+
+        if (options.updateUrl) {
+          const url = new URL(window.location.href);
+          url.searchParams.set("lang", nextLang);
+          window.history.replaceState({}, "", url);
+        }
+      }
+
+      function getRegionPreferredLang(fallback = defaultLang) {
+        const intlLocale =
+          typeof Intl === "object" && typeof Intl.DateTimeFormat === "function"
+            ? Intl.DateTimeFormat().resolvedOptions().locale
+            : "";
+        const sources = [
+          ...(navigator.languages || []),
+          navigator.language,
+          navigator.userLanguage,
+          intlLocale,
+        ]
+          .filter(Boolean)
+          .map((locale) => locale.toLowerCase());
+        const hasKorean = sources.some((locale) => locale.startsWith("ko"));
+        return hasKorean ? "ko" : fallback;
+      }
+
+      function detectLang() {
+        const params = new URLSearchParams(window.location.search);
+        const paramLang = params.get("lang");
+        if (supportedLangs.includes(paramLang)) return paramLang;
+        const stored = localStorage.getItem("preferredLang");
+        if (supportedLangs.includes(stored)) return stored;
+        const candidate = getRegionPreferredLang(defaultLang);
+        return supportedLangs.includes(candidate) ? candidate : defaultLang;
+      }
 
       const cardEl = document.getElementById("card");
       const progressLabel = document.getElementById("progressLabel");
@@ -354,10 +660,12 @@
       funnyLink?.addEventListener("click", () => sendEvent("nav_funnyfunny"));
 
       function renderQuestion() {
+        const questions = getQuestions();
         const q = questions[currentIndex];
-        progressLabel.textContent = `Q${currentIndex + 1} / ${
-          questions.length
-        }`;
+        progressLabel.textContent = t("progressLabel", {
+          current: currentIndex + 1,
+          total: questions.length,
+        });
         const progressPercent = (currentIndex / questions.length) * 100;
         progressBar.style.width = `${Math.max(progressPercent, 5)}%`;
         questionText.textContent = q.text;
@@ -385,7 +693,7 @@
         questionBlock.classList.add("question-hidden");
         setTimeout(() => {
           currentIndex += 1;
-          if (currentIndex >= questions.length) {
+          if (currentIndex >= getQuestions().length) {
             showResult();
           } else {
             renderQuestion();
@@ -397,18 +705,21 @@
       function showResult() {
         questionBlock.classList.add("hidden");
         resultBlock.classList.remove("hidden");
-        progressLabel.textContent = "다른 재미있는 테스트도 해보세요! 👉";
+        progressLabel.textContent = t("resultCta");
         progressBar.style.width = "100%";
         const result =
-          resultConfig.find(
+          getResults().find(
             (r) => totalScore >= r.range[0] && totalScore <= r.range[1]
-          ) || resultConfig[resultConfig.length - 1];
-        resultTitle.textContent = `${result.title} (${totalScore}점)`;
+          ) || getResults()[getResults().length - 1];
+        resultTitle.textContent = t("resultTitleWithScore", {
+          title: result.title,
+          score: totalScore,
+        });
         const normalized = Math.max(
           0,
           Math.min(100, Math.round(((totalScore - 20) / 80) * 100))
         );
-        resultPercent.textContent = `오늘의 컨디션: ${normalized}%`;
+        resultPercent.textContent = t("resultPercent", { percent: normalized });
         resultDesc.textContent = result.desc;
         resultDetail.innerHTML = "";
         result.detail.forEach((item) => {
@@ -462,8 +773,14 @@
         resultBanner.className = `rounded-xl p-4 bg-gradient-to-r ${theme} shadow-lg`;
       }
 
+      document.querySelectorAll(".lang-switch button").forEach((button) => {
+        button.addEventListener("click", () => {
+          setLang(button.dataset.lang, { updateUrl: true });
+        });
+      });
+
       sendEvent("quiz_start");
-      renderQuestion();
+      setLang(detectLang(), { updateUrl: false });
     </script>
   
 <ins class="adsbygoogle"
