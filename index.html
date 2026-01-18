@@ -708,6 +708,26 @@
       }
 
       function showResult() {
+        // result.html로 리다이렉트
+        const result =
+          getResults().find(
+            (r) => totalScore >= r.range[0] && totalScore <= r.range[1]
+          ) || getResults()[getResults().length - 1];
+        const normalized = Math.max(
+          0,
+          Math.min(100, Math.round(((totalScore - 20) / 80) * 100))
+        );
+        const params = new URLSearchParams({
+          score: totalScore.toString(),
+          percent: normalized.toString(),
+          title: result.title || '',
+          type: result.title || ''
+        });
+        window.location.href = `result.html?${params.toString()}`;
+      }
+      
+      // 기존 showResult 로직 (레거시 지원용)
+      function showResultOld() {
         questionBlock.classList.add("hidden");
         resultBlock.classList.remove("hidden");
         progressLabel.textContent = t("resultCta");
